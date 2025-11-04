@@ -17,5 +17,76 @@ install.packages("rpart")
 library(tidyverse)
 library(rpart)
 library(caret)
+```
+
+```{r}
+df <- read.csv("BMW-SalesData.csv")
+summary(df)
+```
+
+```{r} 
+#exploring Model
 
 ```
+
+
+```{r} 
+#exploring Year
+
+```
+
+
+```{r} 
+#exploring Region
+
+```
+
+
+```{r} 
+#exploring Color
+
+```
+
+
+```{r} 
+#exploring Fuel_Type
+
+```
+
+
+```{r} 
+#exploring Transmission
+
+```
+
+
+```{r} 
+#exploring Engine_Size_L
+
+```
+
+
+```{r} 
+#exploring Mileage_KM
+ 
+```
+
+
+```{r} 
+#exploring Price_USD
+
+```
+
+
+```{r} 
+#exploring Sales_Volume
+
+```
+
+
+```{r} 
+#exploring Sales_Classification
+
+```
+
+
