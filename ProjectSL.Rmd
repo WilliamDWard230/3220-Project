@@ -1,29 +1,37 @@
 ---
-title: "Untitled"
+title: "Mileage & Year Exploration (Slate)"
 output: html_document
-date: "2025-11-06"
+date: "2025-11-11"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r ggplot library}
+library(ggplot2)
 ```
 
-## R Markdown
+```{r summary of data}
+bmw_data <- read.csv("bmw.csv", header = TRUE, sep = ",")
+summary(bmw_data)
+```
+Notably, this data set has 10781 entries of cars from year 1996 - 2020 and with a mileage from 1 - 214000.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r plot}
+ggplot(data = bmw_data, aes(x = year, y = mileage)) +
+  geom_point() +
+  geom_smooth(method = "loess", se = FALSE, color = "blue")
 ```
 
-## Including Plots
+A basic plot of year and mileage shows a negative correlation: when year increases the mileage goes down. This is expected and obvious of real data, since newer cars are less used. Adding a linear model ("lm") shows a diagonal line. However a curved line ("loess") better fits the the data especially when considering the older cars, since their usage also seems to fall off.
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r correlation coeffecient}
+correlation_coeff <- cor(bmw_data$year, bmw_data$mileage)
+print(paste("Correlation:", round(correlation_coeff, 3)))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+When correlation is calculated the resulting value is "-0.774," again showing the expected negative relationship.
+
+```{r mileage-frequency}
+mileage_counts <- sort(table(bmw_data$mileage), decreasing = TRUE)
+head(mileage_counts, 100)
+```
+
+The above table counts the amount of times any given mileage value occurs, and has them ordered from highest to lowest. Many of the most common mileage values are rounded to the nearest hundred or thousand (e.g. "1000", "5000", "100"). This shows that the original data set has been rounded, and are not the sort of random values which we would expect. The table does show a mode of 123 which occurred 151 times. This is a strangely specific value especially given that the surrounding numbers 122 and 124 do not show up on the top 100 values. This is evidence that the may not accurately correspond to real world data, or has been adjusted.
