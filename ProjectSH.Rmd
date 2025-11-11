@@ -1,29 +1,44 @@
 ---
-title: "Untitled"
+title: "MPG & Engine Size & Fuel Type (Shaye)"
 output: html_document
-date: "2025-11-06"
+date: "2025-11-11"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+``` {r}
+library(ggplot2)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+``` {r}
+df <- read.csv("bmw.csv")
+summary(df)
 ```
 
-## Including Plots
+``` {r count of vehicles}
+ggplot(df, aes(x=fuelType)) +
+  geom_bar() +
+  labs(title="Count of Vehicles by Fuel Type")
+```
+``` {r}
+fuel_counts_base <- table(df$fuelType)
+print(fuel_counts_base)
+```
+There's the most numerical and consistent data on petrol cars and diesel cars. There's only 3 instances for electric cars. The 36 "other" fuelType category may be the result of missing data of other cars.
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+``` {r}
+ggplot(df, aes(x=fuelType, y=mpg, fill=fuelType)) +
+  geom_violin(trim=FALSE) +
+  geom_boxplot(width=0.1, fill="white") +
+  labs(title="MPG Distribution by Fuel Type")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Petrol and Diesel cars are the only real trustworthy information for looking at miles and the data makes seems real as diesel, on average, has just slightly more mpg than petrol. Electric has the highest range and likely should not be included on this plot, since it is an electric car and does not have a real mileage per gallon. There are a lot of inconsistencies with MPG for Hybrids, with among the highest being 470 miles per gallon, which is very likely an error.
+
+``` {r MPG vs Engine Size by Fuel Type}
+ggplot(df, aes(x=mpg, y=engineSize)) +
+  geom_point() +
+  facet_wrap(~ fuelType) +
+  labs(title="MPG vs Engine Size by Fuel Type")
+```
+
+Electric vehicles do not have an engine size, and thus should not be included in the comparison.There appears to be a weaker correlation between engine size and mpg for hybrids and a massive outlier with 400+ mpg. Diesel and petrol have the most consistent data, following a trend of having higher miles per gallon the smaller the engine size is, unless the engine size is 0 in which case the data is incorrect as this should be impossible.
