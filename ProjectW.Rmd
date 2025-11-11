@@ -9,84 +9,80 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-install.packages("caret")
-install.packages("rpart")
+
 ```
 
 ```{r}
 library(tidyverse)
-library(rpart)
-library(caret)
+
+
 ```
 
 ```{r}
-df <- read.csv("BMW-SalesData.csv")
+df <- read.csv("bmw.csv")
 summary(df)
 ```
 
-```{r} 
-#exploring Model
+```{r}
+hist(df$price, breaks=100)
+
+transmission_A <- df %>% filter(transmission=="Automatic")
+transmission_Semi <- df %>% filter(transmission=="Semi-Auto")
+transmission_M <- df %>% filter(transmission=="Manual")
+
+hist(transmission_A$price, breaks = 100, xlim=c(0,75000))
+hist(transmission_Semi$price, breaks = 100, xlim=c(0,75000))
+hist(transmission_M$price, breaks = 100, xlim=c(0,75000))
+
 
 ```
 
+```{r}
+anova_transmisison <- aov(price ~ transmission, data = df)
+summary(anova_transmisison)
+# transmission Sum sq = variation explained by transmission type
+# residuals Sum sq = variation unexplained by transmission type
 
-```{r} 
-#exploring Year
-
-```
-
-
-```{r} 
-#exploring Region
-
-```
-
-
-```{r} 
-#exploring Color
+# n^2 = t-SumSq/r-SumSq = 0.189
+# around 19% of the variance in price is explained by transmission
 
 ```
 
+```{r}
+TukeyHSD(anova_transmisison)
+#                          diff       lwr       upr p adj
+# Manual-Automatic    -7781.573 -8407.339 -7155.807     0
+# Semi-Auto-Automatic  4940.724  4405.696  5475.752     0
+# Semi-Auto-Manual    12722.297 12127.152 13317.442     0
 
-```{r} 
-#exploring Fuel_Type
-
+# manual cars are about $7,782 cheaper than automatics
+# Semi-Auto cars are about $4,941 more expensive than automatics
+# Semi-Auto cars are about $12,722 more expensive than manuals
 ```
 
-
-```{r} 
-#exploring Transmission
-
+```{r}
+colnames(df)
 ```
 
+```{r}
+anova_model <- aov(price ~ model, data=df)
+summary(anova_model)
 
-```{r} 
-#exploring Engine_Size_L
-
+# 6.900e11/(6.900e11 + 7.148e11) = .49 | 49% of variation in price is explained by model
 ```
 
+```{r}
+model_transmission <- lm(price~transmission, data=df)
+summary(model_transmission)
 
-```{r} 
-#exploring Mileage_KM
- 
+model_carM <- lm(price~model, data=df)
+summary(model_carM)
 ```
 
+```{r}
+model_MT <- lm(price ~ model + transmission, data=df)
+summary(model_MT)
 
-```{r} 
-#exploring Price_USD
-
+# multiple r^2 value = .572 | 57% of variation in price explained by model and transmission. #notice that .49 + .19 is not 0.572. Transmission adds some unique predictive power on top of model, but its explainability overlaps with model somewhat. 
 ```
-
-
-```{r} 
-#exploring Sales_Volume
-
-```
-
-
-```{r} 
-#exploring Sales_Classification
-
-```
-
 
