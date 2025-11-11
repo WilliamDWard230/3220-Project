@@ -3,3 +3,242 @@ title: "EDA"
 output: html_document
 ---
 
+
+## Engine Sizes
+
+```{r setup_packs, echo=FALSE, warning=FALSE, message=FALSE}
+
+options(repos = c(CRAN = "http://cran.rstudio.com/"))
+
+
+# import code from https://statsandr.com/blog/an-efficient-way-to-install-and-load-r-packages/
+if (!("huxtable "%in% rownames(installed.packages()))) {
+  install.packages("huxtable", type="binary")
+}
+
+if (!("dplyr "%in% rownames(installed.packages()))) {
+  install.packages("dplyr", type="binary")
+}
+```
+
+```{r setup, warning=FALSE, message=FALSE}
+
+library(huxtable)
+library(dplyr)
+
+df <- read.csv("bmw.csv")
+
+```
+
+```{r sizes, echo=FALSE}
+
+# remove proceeding model space
+df$model <- substr(df$model, 2, nchar(df$model))
+
+# add unit and order
+# formatting from https://www.projectpro.io/recipes/convert-integer-float-r
+df$engineSizeStr <- paste(noquote(sprintf("%1.1f",df$engineSize)), "L", sep="")
+
+engine_counts <- count(df, engineSizeStr)
+barplot(engine_counts$n, cex.names=0.6, names.arg=engine_counts$engineSizeStr)
+
+# table code from https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r
+ht <- count(df, engineSizeStr) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
+```
+
+Here we can see that the 2.0L (4-cylinder) engine and the 3.0 liter (6-cylinder) engine are the most popular
+
+The largest engine size is the 6.6 liter V12, and the smallest is the 0.6 liter 2-cylinder
+
+```{r zeros}
+
+
+df[df$engineSize == 0 & df$fuelType == "Electric", c("model", "fuelType", "engineSize")]
+
+```
+
+Note that 47 cars have an engine size of 0, and only 2 of them are electric
+
+```{r fuels, echo=FALSE}
+
+ht <- count(df, fuelType) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
+df[df$fuelType == "Electric", c("model", "fuelType", "engineSize")]
+
+
+```
+
+On the flip side, there are 3 total electric cars, and 1 has a non-0 engine size
+
+Both of these issues may require cleaning
+
+
+## Models
+
+There are 24 different model types.
+The most popular series are 3, 1, 2, 5, and 4
+
+```{r models, echo=FALSE}
+
+ht <- count(df, model) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
+noquote(paste(nrow(table(df$model)), " model types"))
+
+noquote(paste(round(nrow(df[df$model == "3 Series", ]) / nrow(df) * 100, digits=1), "% 3 series"))
+noquote(paste(round(nrow(df[df$model == "1 Series", ]) / nrow(df) * 100, digits=1), "% 1 series"))
+noquote(paste(round(nrow(df[df$model == "2 Series", ]) / nrow(df) * 100, digits=1), "% 2 series"))
+noquote(paste(round(nrow(df[df$model == "5 Series", ]) / nrow(df) * 100, digits=1), "% 5 series"))
+noquote(paste(round(nrow(df[df$model == "4 Series", ]) / nrow(df) * 100, digits=1), "% 4 series"))
+
+
+```
+
+Also worth noting is that all series names have proceeding spaces which should be cleaned
+
+```{r pies, echo=FALSE, warning=FALSE, message=FALSE}
+
+counts <- count(df, model)
+counts <- counts[order(counts$n), ]
+
+is_suv <- substr(counts$model, 1, 1) == "X"
+suvs <- counts[is_suv, ]
+counts_simplified <- counts[!is_suv, ]
+counts_simplified <- rbind(counts_simplified, list("X models", sum(suvs$n)))
+# simplified away all suvs into a single category
+
+is_z <- substr(counts_simplified$model, 1, 1) == "Z"
+zs <- counts_simplified[is_z, ]
+counts_simplified <- counts_simplified[!is_z, ]
+counts_simplified <- rbind(counts_simplified, list("Z models", sum(zs$n)))
+# simplified away all Zs into a single category
+
+is_m <- substr(counts_simplified$model, 1, 1) == "M"
+ms <- counts_simplified[is_m, ]
+counts_simplified <- counts_simplified[!is_m, ]
+counts_simplified <- rbind(counts_simplified, list("M models", sum(ms$n)))
+# simplified away all Ms into a single category
+
+is_i <- substr(counts_simplified$model, 1, 1) == "i"
+is <- counts_simplified[is_i, ]
+counts_simplified <- counts_simplified[!is_i, ]
+counts_simplified <- rbind(counts_simplified, list("electric", sum(is$n)))
+# simplified away all Is into a single category
+
+pie(counts$n, counts$model, radius=1.075, cex=0.6)
+pie(counts_simplified$n, counts_simplified$model, radius=1.075, cex=0.6)
+
+
+```
+
+The second pie chart is simplified a bit, grouping some of the model types
+
+X models: suvs
+
+M models: high performance
+
+Z models: 2-seat roadsters
+
+
+
+## Transmission
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+```
+
+```{r}
+library(tidyverse)
+
+
+```
+
+```{r}
+df <- read.csv("bmw.csv")
+summary(df)
+```
+
+```{r}
+hist(df$price, breaks=100)
+
+transmission_A <- df %>% filter(transmission=="Automatic")
+transmission_Semi <- df %>% filter(transmission=="Semi-Auto")
+transmission_M <- df %>% filter(transmission=="Manual")
+
+hist(transmission_A$price, breaks = 100, xlim=c(0,75000))
+hist(transmission_Semi$price, breaks = 100, xlim=c(0,75000))
+hist(transmission_M$price, breaks = 100, xlim=c(0,75000))
+
+
+```
+
+```{r}
+anova_transmisison <- aov(price ~ transmission, data = df)
+summary(anova_transmisison)
+# transmission Sum sq = variation explained by transmission type
+# residuals Sum sq = variation unexplained by transmission type
+
+# n^2 = t-SumSq/r-SumSq = 0.189
+# around 19% of the variance in price is explained by transmission
+
+```
+
+```{r}
+TukeyHSD(anova_transmisison)
+#                          diff       lwr       upr p adj
+# Manual-Automatic    -7781.573 -8407.339 -7155.807     0
+# Semi-Auto-Automatic  4940.724  4405.696  5475.752     0
+# Semi-Auto-Manual    12722.297 12127.152 13317.442     0
+
+# manual cars are about $7,782 cheaper than automatics
+# Semi-Auto cars are about $4,941 more expensive than automatics
+# Semi-Auto cars are about $12,722 more expensive than manuals
+```
+
+```{r}
+colnames(df)
+```
+
+```{r}
+anova_model <- aov(price ~ model, data=df)
+summary(anova_model)
+
+# 6.900e11/(6.900e11 + 7.148e11) = .49 | 49% of variation in price is explained by model
+```
+
+```{r}
+model_transmission <- lm(price~transmission, data=df)
+summary(model_transmission)
+
+model_carM <- lm(price~model, data=df)
+summary(model_carM)
+```
+
+```{r}
+model_MT <- lm(price ~ model + transmission, data=df)
+summary(model_MT)
+
+# multiple r^2 value = .572 | 57% of variation in price explained by model and transmission. #notice that .49 + .19 is not 0.572. Transmission adds some unique predictive power on top of model, but its explainability overlaps with model somewhat. 
+```
+
+
+
+
+
