@@ -54,7 +54,7 @@ t(ht)
 
 Here we can see that the 2.0L (4-cylinder) engine and the 3.0 liter (6-cylinder) engine are the most popular
 
-The largest engine size is the 6.6 liter V8, and the smallest is the 0.6 liter 2-cylinder
+The largest engine size is the 6.6 liter V12, and the smallest is the 0.6 liter 2-cylinder
 
 ```{r zeros}
 
@@ -151,4 +151,6 @@ X models: suvs
 M models: high performance
 
 Z models: 2-seat roadsters
+
+
 
