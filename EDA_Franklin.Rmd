@@ -1,29 +1,154 @@
 ---
-title: "ProjectF"
+title: "Franklin's EDA"
 output: html_document
-date: "2025-11-06"
+date: "2025-11-10"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup_packs, echo=FALSE, warning=FALSE, message=FALSE}
+
+options(repos = c(CRAN = "http://cran.rstudio.com/"))
+
+
+# import code from https://statsandr.com/blog/an-efficient-way-to-install-and-load-r-packages/
+if (!("huxtable "%in% rownames(installed.packages()))) {
+  install.packages("huxtable", type="binary")
+}
+
+if (!("dplyr "%in% rownames(installed.packages()))) {
+  install.packages("dplyr", type="binary")
+}
 ```
 
-## R Markdown
+```{r setup, warning=FALSE, message=FALSE}
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+library(huxtable)
+library(dplyr)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+df <- read.csv("bmw.csv")
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
+## Engine Sizes
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r sizes, echo=FALSE}
+
+# remove proceeding model space
+df$model <- substr(df$model, 2, nchar(df$model))
+
+# add unit and order
+# formatting from https://www.projectpro.io/recipes/convert-integer-float-r
+df$engineSizeStr <- paste(noquote(sprintf("%1.1f",df$engineSize)), "L", sep="")
+
+engine_counts <- count(df, engineSizeStr)
+barplot(engine_counts$n, cex.names=0.6, names.arg=engine_counts$engineSizeStr)
+
+# table code from https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r
+ht <- count(df, engineSizeStr) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Here we can see that the 2.0L (4-cylinder) engine and the 3.0 liter (6-cylinder) engine are the most popular
+
+The largest engine size is the 6.6 liter V8, and the smallest is the 0.6 liter 2-cylinder
+
+```{r zeros}
+
+
+df[df$engineSize == 0 & df$fuelType == "Electric", c("model", "fuelType", "engineSize")]
+
+```
+
+Note that 47 cars have an engine size of 0, and only 2 of them are electric
+
+```{r fuels, echo=FALSE}
+
+ht <- count(df, fuelType) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
+df[df$fuelType == "Electric", c("model", "fuelType", "engineSize")]
+
+
+```
+
+On the flip side, there are 3 total electric cars, and 1 has a non-0 engine size
+
+Both of these issues may require cleaning
+
+
+## Models
+
+There are 24 different model types.
+The most popular series are 3, 1, 2, 5, and 4
+
+```{r models, echo=FALSE}
+
+ht <- count(df, model) %>% 
+  as_huxtable(add_colnames=TRUE) %>% 
+  set_all_borders(1) %>%
+  set_bold(1, everywhere)
+t(ht)
+
+noquote(paste(nrow(table(df$model)), " model types"))
+
+noquote(paste(round(nrow(df[df$model == "3 Series", ]) / nrow(df) * 100, digits=1), "% 3 series"))
+noquote(paste(round(nrow(df[df$model == "1 Series", ]) / nrow(df) * 100, digits=1), "% 1 series"))
+noquote(paste(round(nrow(df[df$model == "2 Series", ]) / nrow(df) * 100, digits=1), "% 2 series"))
+noquote(paste(round(nrow(df[df$model == "5 Series", ]) / nrow(df) * 100, digits=1), "% 5 series"))
+noquote(paste(round(nrow(df[df$model == "4 Series", ]) / nrow(df) * 100, digits=1), "% 4 series"))
+
+
+```
+
+Also worth noting is that all series names have proceeding spaces which should be cleaned
+
+```{r pies, echo=FALSE, warning=FALSE, message=FALSE}
+
+counts <- count(df, model)
+counts <- counts[order(counts$n), ]
+
+is_suv <- substr(counts$model, 1, 1) == "X"
+suvs <- counts[is_suv, ]
+counts_simplified <- counts[!is_suv, ]
+counts_simplified <- rbind(counts_simplified, list("X models", sum(suvs$n)))
+# simplified away all suvs into a single category
+
+is_z <- substr(counts_simplified$model, 1, 1) == "Z"
+zs <- counts_simplified[is_z, ]
+counts_simplified <- counts_simplified[!is_z, ]
+counts_simplified <- rbind(counts_simplified, list("Z models", sum(zs$n)))
+# simplified away all Zs into a single category
+
+is_m <- substr(counts_simplified$model, 1, 1) == "M"
+ms <- counts_simplified[is_m, ]
+counts_simplified <- counts_simplified[!is_m, ]
+counts_simplified <- rbind(counts_simplified, list("M models", sum(ms$n)))
+# simplified away all Ms into a single category
+
+is_i <- substr(counts_simplified$model, 1, 1) == "i"
+is <- counts_simplified[is_i, ]
+counts_simplified <- counts_simplified[!is_i, ]
+counts_simplified <- rbind(counts_simplified, list("electric", sum(is$n)))
+# simplified away all Is into a single category
+
+pie(counts$n, counts$model, radius=1.075, cex=0.6)
+pie(counts_simplified$n, counts_simplified$model, radius=1.075, cex=0.6)
+
+
+```
+
+The second pie chart is simplified a bit, grouping some of the model types
+
+X models: suvs
+
+M models: high performance
+
+Z models: 2-seat roadsters
+
