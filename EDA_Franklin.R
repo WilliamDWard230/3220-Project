@@ -3,6 +3,12 @@
 
 df <- read.csv("bmw.csv")
 
+df_sorted <- df[order(df$mpg, decreasing=FALSE), ]
+df_sorted[(df_sorted$fuelType != "Petrol") & (df_sorted$fuelType != "Diesel"), ]
+df_sorted
+df_sorted[(df_sorted$fuelType == "Petrol"), ]
+
+
 table(df$engineSize)
 nrow(df[df$engineSize == 0, ])
 nrow(df[df$engineSize == 0 & df$fuelType == "Electric", ])
