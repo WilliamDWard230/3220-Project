@@ -1,0 +1,193 @@
+---
+title: "BMWPricePrediction"
+output: html_document
+date: "2025-11-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+df <- read.csv("bmw.csv")
+colnames(df)
+glimpse(df)
+summary(df)
+
+## Rows: 10,781
+## Columns: 9
+
+##  model               Character
+##  year                Int
+##  engineSize          Double        #this is a problematic feature. will save for last
+##  transmission        Character
+##  mileage             Int
+##  fuelType            Character
+##  tax                 Int
+##  mpg                 Double        #This entire feature is problematic. A mean of 56 is unrealistic even taking into account the hybrids and electric MPGe. (There are too few of either to shift mean) 
+
+## price                Int
+```
+
+Data Cleaning
+
+```{r}
+#model
+unique(df$model)
+table(df$model)
+
+sum(is.na(df$model))
+
+df$model <- as.factor(df$model)
+
+df$model <- trimws(df$model)
+
+#no missing values
+#some models have few instances
+```
+
+```{r}
+#year
+
+table(df$year)
+#1996-2020
+
+#Some years have too few instances to be useful for modeling. I will remove years with few than 6 instances
+
+df_filtered <- df %>% add_count(year) %>% filter(n >= 5) %>% select(-n)
+#drop 1996-2001, 2003
+```
+
+```{r}
+#transmission
+sort(unique(df_filtered$transmission))
+table(df_filtered$transmission)
+df_filtered$transmission <- trimws(df_filtered$transmission)
+
+# Automatic  Manual   Semi-Auto 
+#  3582       2519     4666 
+
+#I don't have the domain knowledge the know if the transmissions are correct
+```
+
+```{r}
+#mileage 
+summary(df_filtered$mileage)
+# 1-214,000 
+
+any(is.na(df_filtered$mileage))
+#There are no missing values
+```
+
+```{r}
+#fuelType
+df_filtered$fuelType <- trimws(df_filtered$fuelType)
+table(df_filtered$fuelType)
+
+#I want to get rid of the "other" category.
+subset_other <- df_filtered %>%
+  filter(fuelType == "Other") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+
+subset_hybrid <- df_filtered %>%
+  filter(fuelType == "Hybrid") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+subset_electric <- df_filtered %>%
+  filter(fuelType == "Electric") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+
+
+
+subset_other2 <- df_filtered %>%
+  filter(fuelType == "Other") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+subset_hybrid2 <- df_filtered %>%
+  filter(fuelType == "Hybrid") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+# We can set i3s with an engineSize of 0.0 as electric, and set and i3 with an engineSize of 0.6 as hybrid. Then we can remove any electric
+
+df_filtered <- df_filtered %>%
+  # remove i3 with engineSize 0.0
+  filter(!(model == "i3" & engineSize == 0.0)) %>%
+  # change fuelType for i3 REx (0.6L)
+  mutate(
+    fuelType = ifelse(model == "i3" & engineSize == 0.6, 
+                      "Hybrid", 
+                       fuelType)
+  )
+
+df_filtered <- df_filtered %>%
+  mutate(mpg = ifelse(model == "i3", NA, mpg))
+df_filtered <- df_filtered %>% filter(fuelType != "Electric")
+
+
+subset_other3 <- df_filtered %>%
+  filter(fuelType == "Other") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+subset_hybrid3 <- df_filtered %>%
+  filter(fuelType == "Hybrid") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+#The remaining in other are not clearly one fuelType, so we can remove those. 
+
+df_filtered <- df_filtered %>% filter(fuelType != "Other")
+
+table(df_filtered$fuelType)
+
+subset_hybrid_final <- df_filtered %>%
+  filter(fuelType == "Hybrid") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+
+```
+
+```{r}
+#mpg
+
+mpg_avg <- df_filtered %>% group_by(fuelType) %>% summarise(mpg_avg = mean(mpg),na.rm = TRUE)
+
+#before setting i3 mpg to NA
+# Petrol    Diesel      Hybrid      Other       Electric
+# 42.945     57.7908     156.876     199.3638    470.8
+
+#after setting i3 mpg to NA
+# Petrol    Diesel      Hybrid      Other       
+# 42.945     57.7908    117.784     133.845
+
+
+
+#There are some outliers in the hybrid category. they seem to be using the actual mpg of the engines when the battery is not charged. The other cars use a different measure, so these will be removed. 
+df_filtered <- df_filtered %>%
+  mutate(
+    mpg = ifelse(fuelType == "Hybrid" & mpg < 20, NA, mpg)
+  )
+
+subset_hybrid_final <- df_filtered %>%
+  filter(fuelType == "Hybrid") %>%
+  distinct(model, year, transmission, .keep_all = TRUE)
+
+range(df_filtered$mpg[df_filtered$fuelType == "Petrol"], na.rm = TRUE)
+range(df_filtered$mpg[df_filtered$fuelType == "Diesel"], na.rm = TRUE)
+range(df_filtered$mpg[df_filtered$fuelType == "Hybrid"], na.rm = TRUE)
+
+df_filtered %>%
+  filter(fuelType == "Diesel") %>%
+  group_by(model) %>%
+  summarise(
+    mpg_min = min(mpg, na.rm = TRUE),
+    mpg_max = max(mpg, na.rm = TRUE),
+    mpg_range = mpg_max - mpg_min
+  )
+
+write.csv(df_filtered, "filtered_BMW.csv")
+```
