@@ -17,7 +17,7 @@ nrow(df[df$engineSize == 0 & df$fuelType == "Electric", ])
 
 # chart code from https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r
 install.packages("huxtable", type="binary")
-library(huxtable)
+# library(huxtable)
 library(dplyr)
 df$engineSizeStr <- paste(noquote(sprintf("%1.1f",df$engineSize)), "L", sep="")
 count(df, engineSizeStr) %>% 

@@ -13,16 +13,21 @@ options(repos = c(CRAN = "http://cran.rstudio.com/"))
 
 
 # import code from https://statsandr.com/blog/an-efficient-way-to-install-and-load-r-packages/
-if (!("huxtable "%in% rownames(installed.packages()))) {
+if (!("huxtable" %in% rownames(installed.packages()))) {
   install.packages("huxtable", type="binary")
 }
 
-if (!("dplyr "%in% rownames(installed.packages()))) {
+if (!("dplyr" %in% rownames(installed.packages()))) {
   install.packages("dplyr", type="binary")
 }
+
+if (!("tidyverse" %in% rownames(installed.packages()))) {
+  install.packages("tidyverse", type="binary")
+}
+
 ```
 
-```{r setup, warning=FALSE, message=FALSE}
+```{r setup_Franklin, warning=FALSE, message=FALSE}
 
 library(huxtable)
 library(dplyr)
@@ -157,7 +162,7 @@ Z models: 2-seat roadsters
 ## Transmission
 by Will Ward
 
-```{r setup, include=FALSE}
+```{r setup_Will, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -322,3 +327,53 @@ ggplot(df, aes(x=mpg, y=engineSize)) +
 Electric vehicles do not have an engine size, and thus should not be included in the comparison.There appears to be a weaker correlation between engine size and mpg for hybrids and a massive outlier with 400+ mpg. Diesel and petrol have the most consistent data, following a trend of having higher miles per gallon the smaller the engine size is, unless the engine size is 0 in which case the data is incorrect as this should be impossible.
 
 
+## Tax
+by AJ Wood
+
+```{r pressure, echo=FALSE}
+
+library(rpart)
+
+car_data <- read.csv("bmw.csv")
+
+summary(car_data)
+
+plot(car_data$price, car_data$tax, main = "Car Price vs Tax", xlab="Price", ylab="Tax")
+
+boxplot(tax ~ price, data = car_data, main = "Tax by Price",
+        xlab = "Tax", ylab="Price") 
+
+carModel <- rpart(tax ~ price, data = car_data)
+summary(carModel)
+
+```
+
+```{r}
+summary(car_data$tax)
+hist(car_data$tax, main = "Distribution of Car Tax", xlab = "Tax", col = "blue",border = "white")
+boxplot(car_data$tax, data = car_data, main = "Tax", xlab = "Tax")
+carModel <- rpart(tax ~ fuelType, data = car_data)
+summary(carModel)
+
+```
+// After running this rpart we discover something important 
+   Avg tax for electric/hybrid: 79
+   Avg tax for pretrol/diesal: 120
+
+
+## Price
+by AJ Wood
+
+```{r}
+summary(car_data$price)
+hist(car_data$price, main = "Distribution of Car Price", xlab = "Price", col = "blue",border = "white")
+boxplot(car_data$price, data = car_data, main = "Distibution of Car Price", xlab = "Price")
+plot(car_data$price, car_data$engineSize, main = "Car Price vs Engine Size", xlab="Price", ylab="Engine")
+carModel <- rpart(price ~ engineSize, data = car_data)
+summary(carModel)
+```
+//after running rpart it seems that the bigger the engine size,     the higher the price with a split between 1.95, 2.9, and 4,2      liters. 
+  For engines < 1.95 avg price: 16,726
+  For engines 1.95-2.9 avg price: 20,651
+  For engines 2.9-4.2 avg prices: 31,475
+  For engines > 4.2 avg prices: 46,536

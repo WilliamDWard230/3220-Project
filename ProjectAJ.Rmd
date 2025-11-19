@@ -4,29 +4,12 @@ output: html_document
 date: "2025-11-06"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## R Markdown
+## Tax
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-install.packages("rpart")
-library(rpart)
-
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-The boxplot and plot did not show anything useful, so instead I'm going to analyze the features by themselves
 ```{r pressure, echo=FALSE}
-plot(pressure)
+
+library(rpart)
 
 car_data <- read.csv("bmw.csv")
 
@@ -40,24 +23,30 @@ boxplot(tax ~ price, data = car_data, main = "Tax by Price",
 carModel <- rpart(tax ~ price, data = car_data)
 summary(carModel)
 
-tax related stuff 
+```
 
+```{r}
 summary(car_data$tax)
 hist(car_data$tax, main = "Distribution of Car Tax", xlab = "Tax", col = "blue",border = "white")
 boxplot(car_data$tax, data = car_data, main = "Tax", xlab = "Tax")
 carModel <- rpart(tax ~ fuelType, data = car_data)
 summary(carModel)
+
+```
 // After running this rpart we discover something important 
    Avg tax for electric/hybrid: 79
    Avg tax for pretrol/diesal: 120
 
-price related stuff 
+## Price
+
+```{r}
 summary(car_data$price)
 hist(car_data$price, main = "Distribution of Car Price", xlab = "Price", col = "blue",border = "white")
 boxplot(car_data$price, data = car_data, main = "Distibution of Car Price", xlab = "Price")
 plot(car_data$price, car_data$engineSize, main = "Car Price vs Engine Size", xlab="Price", ylab="Engine")
 carModel <- rpart(price ~ engineSize, data = car_data)
 summary(carModel)
+```
 //after running rpart it seems that the bigger the engine size,     the higher the price with a split between 1.95, 2.9, and 4,2      liters. 
   For engines < 1.95 avg price: 16,726
   For engines 1.95-2.9 avg price: 20,651
@@ -65,6 +54,5 @@ summary(carModel)
   For engines > 4.2 avg prices: 46,536
 
 
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
