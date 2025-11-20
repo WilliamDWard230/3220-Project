@@ -75,6 +75,7 @@ df_filtered$transmission <- trimws(df_filtered$transmission)
 ```
 
 ```{r}
+
 #mileage 
 summary(df_filtered$mileage)
 # 1-214,000 
@@ -126,7 +127,7 @@ df_filtered <- df_filtered %>%
   )
 
 df_filtered <- df_filtered %>%
-  mutate(mpg = ifelse(model == "i3", NA, mpg))
+mutate(mpg = ifelse(model == "i3", NA, mpg))
 df_filtered <- df_filtered %>% filter(fuelType != "Electric")
 
 
@@ -189,5 +190,147 @@ df_filtered %>%
     mpg_range = mpg_max - mpg_min
   )
 
-write.csv(df_filtered, "filtered_BMW.csv")
+# filter out all vehicles with engine size of 0
+df_filtered <- df_filtered[df_filtered$engineSize != 0, ]
+
+
+#write.csv(df_filtered, "filtered_BMW.csv")
+
+```
+Setting up for training
+```{r, setup}
+
+
+#install.packages("caret", type="binary")
+#install.packages("xgboost", type="binary")
+#install.packages("prodlim", type="binary")
+#install.packages("randomForest", type="binary")
+
+library(caret)
+library(randomForest)
+library(xgboost)
+library(mgcv)
+
+# remove NAs
+df_filtered <- na.omit(df_filtered)
+
+# create train and test set
+train_index = createDataPartition(df_filtered$price, p=0.8, list=FALSE)
+df_train <- df_filtered[ train_index, ]
+df_test <- df_filtered[ -train_index, ]
+```
+
+Train GAM model
+```{r}
+
+gam_model <- gam(price ~ model + year + transmission + mileage + fuelType + tax + mpg + engineSize, data=df_train)
+
+summary(gam_model)
+
+```
+
+Train RF
+```{r}
+rf <- randomForest(price ~ model + year + transmission + mileage + fuelType + tax + mpg + engineSize, data=df_train)
+
+summary(rf)
+
+predictions <- predict(rf, df_test)
+summary(predictions)
+
+resis <- abs(predictions - df_test$price)
+summary(resis)
+
+```
+
+```{r}
+
+
+lm_model <- lm(
+  price ~ model + year + transmission + mileage + fuelType + tax + mpg + engineSize,
+  data = df_train
+)
+
+importance <- varImp(lm_model)
+importance[ordered(importance$Overall), ]
+
+summary(lm_model)
+
+preds <- predict(lm_model, df_test)
+targets <- df_test$price
+
+resis <- abs(targets - predictions)
+
+summary(resis)
+
+```
+
+
+Train XGBOOST
+```{r}
+
+x_train <- model.matrix(
+  price ~ model + year + transmission + mileage + fuelType + tax + mpg + engineSize,
+  data = df_train
+)
+x_test <- model.matrix(
+  price ~ model + price + year + transmission + mileage + fuelType + tax + mpg + engineSize,
+  data = df_test
+)
+
+
+# https://www.geeksforgeeks.org/r-language/xgboost-in-r-programming/
+Dtrain = xgb.DMatrix(
+        data = x_train,
+        label = df_train$price)
+Dtest = xgb.DMatrix(
+        data = x_test)
+
+param_list = list(
+  objective = "reg:squarederror",
+  eta = 0.01,
+  gamma = 1,
+  max_depth = 6,
+  subsample = 0.8,
+  colsample_bytree = 0.5
+)
+
+# Training XGBoost model at nrounds = 428
+
+xgb_model = xgb.train(data = Dtrain,
+                    params = param_list,
+                    nrounds = 428)
+
+importance <- xgb.importance(
+  feature_name = colnames(x_train),
+  model = xgb_model
+)
+
+xgb.plot.importance(importance, col="steelblue", main="Feature Importance for XGB Model")
+
+
+summary(Dtrain)
+
+predictions <- predict(xgb_model, Dtest)
+summary(predictions)
+
+resis <- predictions - df_test$price
+summary(resis)
+
+```
+
+Predict Franklins car with RF
+```{r}
+# Franklin's Car eval
+predictions <- predict(rf, data.frame(
+  model=c("2 Series"),
+  year=c(2015),
+  transmission=c("Semi-Automatic"),
+  mileage=c(71000),
+  fuelType=c("Petrol"),
+  tax=c(0),
+  mpg=c(18),
+  engineSize=c(3.0)
+))
+
 ```

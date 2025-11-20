@@ -19,7 +19,7 @@ nrow(df[df$engineSize == 0 & df$fuelType == "Electric", ])
 install.packages("huxtable", type="binary")
 # library(huxtable)
 library(dplyr)
-df$engineSizeStr <- paste(noquote(sprintf("%1.1f",df$engineSize)), "L", sep="")
+df$engineSizeStr <- paste(no  quote(sprintf("%1.1f",df$engineSize)), "L", sep="")
 count(df, engineSizeStr) %>% 
   as_huxtable(add_colnames=TRUE) %>% 
   set_all_borders(1) %>%
